@@ -5,6 +5,28 @@ class ButtonBar(gtk.HBox):
 		gtk.HBox.__init__(self)
 		self.set_size_request(-1, 32)
 
+class ChanWin(gtk.HPaned):
+	def __init__(self):
+		gtk.HPaned.__init__(self)
+
+		self.topic = gtk.Entry()
+		self.text = gtk.TextView()
+		self.entry = gtk.Entry()
+
+		self.status = gtk.Label('32 ops, 38 total')
+		self.usrlist = gtk.TreeView()
+
+		u = gtk.VBox()
+		u.pack_start(self.status, False, False)
+		u.pack_start(self.usrlist, True, True)
+		self.add1(u)
+
+		chan = gtk.VBox()
+		chan.pack_start(self.topic, False, False)
+		chan.pack_start(self.text, True, True)
+		chan.pack_start(self.entry, False, False)
+		self.add2(chan)
+
 class MainWin(gtk.Window):
 	def destroy(self, *_):
 		gtk.Window.destroy(self)
@@ -41,5 +63,4 @@ class MainWin(gtk.Window):
 
 		self.buttonbar = ButtonBar()
 		vb.pack_start(self.buttonbar, False, False)
-		vb.pack_start(gtk.TextView(), True, True)
-		vb.pack_start(gtk.Entry(), False, False)
+		vb.pack_start(ChanWin(), True, True)

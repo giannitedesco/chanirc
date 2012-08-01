@@ -48,7 +48,7 @@ class ChanWin(gtk.HPaned):
 		buf.insert_with_tags_by_name(i, msg + '\n', *tags)
 		i = buf.get_iter_at_offset(buf.get_char_count())
 		buf.place_cursor(i)
-		self.text.scroll_to_iter(i, 0.25)
+		self.text.scroll_to_iter(i, 0.0)
 		
 
 

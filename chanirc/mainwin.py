@@ -55,7 +55,6 @@ class MainWin(gtk.Window):
 		svr.server(host)
 
 	def __sel(self, serverlist):
-		print 'hi'
 		self.__vp.add2(serverlist.get_selection())
 		self.__vp.show_all()
 

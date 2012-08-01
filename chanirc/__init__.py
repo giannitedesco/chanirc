@@ -1,1 +1,1 @@
-import ui
+from mainwin import MainWin

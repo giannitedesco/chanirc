@@ -1,1 +1,0 @@
-from mainwin import MainWin

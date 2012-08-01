@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from chanirc.ui import MainWin
+from chanirc import MainWin
 
 if __name__ == '__main__':
 	win = MainWin()

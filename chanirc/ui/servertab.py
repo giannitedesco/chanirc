@@ -3,6 +3,7 @@ from socket import gethostbyname, socket, AF_INET, SOCK_STREAM, IPPROTO_TCP, \
 			SOL_SOCKET, SO_ERROR, error as SockError
 from errno import EINPROGRESS, EAGAIN
 from os import strerror
+from chanwin import ChanWin
 
 class ServerTab(gobject.GObject):
 	STATE_DISCONNECTED = 0,
@@ -13,6 +14,7 @@ class ServerTab(gobject.GObject):
 		gobject.GObject.__init__(self)
 		self.title = '<None>'
 		self.state = self.STATE_DISCONNECTED
+		self.tab = ChanWin(self.title)
 		self.__sid = None
 		self.__sock = None
 

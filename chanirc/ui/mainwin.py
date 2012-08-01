@@ -49,10 +49,15 @@ class MainWin(gtk.Window):
 		self.send(s)
 
 	def cmd_server(self, host):
-		svr = self.serverlist.cur
+		svr = self.serverlist.cur_svr
 		if svr is None or host is None:
 			raise Exception('ugh...')
 		svr.server(host)
+
+	def __sel(self, serverlist):
+		print 'hi'
+		self.__vp.add2(serverlist.get_selection())
+		self.__vp.show_all()
 
 	def __init__(self):
 		gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
@@ -70,15 +75,16 @@ class MainWin(gtk.Window):
 		vb = gtk.VBox()
 		self.add(vb)
 
-		vp = gtk.HPaned()
-		vb.pack_start(vp, True, True)
+		self.__vp = gtk.HPaned()
+		vb.pack_start(self.__vp, True, True)
 
 		self.entry = IrcEntry()
 		self.entry.connect('send', self.__send)
 		vb.pack_start(self.entry, False, False)
 
 		self.serverlist = ServerList()
-		vp.add1(self.serverlist)
+		self.serverlist.connect('selection-changed', self.__sel)
+		self.__vp.add1(self.serverlist)
 
 		self.set_focus(self.entry)
 		self.__cmd = {

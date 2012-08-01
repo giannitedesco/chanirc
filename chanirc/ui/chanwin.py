@@ -13,12 +13,12 @@ class ChanWin(gtk.HPaned):
 		chan = gtk.VBox()
 		chan.pack_start(self.topic, False, False)
 		chan.pack_start(self.text, True, True)
-		self.add1(chan)
+		self.pack1(chan, True, True)
 
 		u = gtk.VBox()
 		u.pack_start(self.status, False, False)
 		u.pack_start(self.usrlist, True, True)
-		self.add2(u)
+		self.pack2(u, False, False)
 
 
 gobject.signal_new('title-changed', ChanWin,

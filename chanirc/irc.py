@@ -18,9 +18,20 @@ class IRC(gobject.GObject):
 			(gobject.TYPE_STRING, gobject.TYPE_STRING)),
 	}
 
+	def join(self, chan):
+		self.send('JOIN %s'%chan)
+
 	def __001(self, prefix, args, extra):
 		"connected"
 		self.server_msg(extra)
+		return True
+
+	def __353(self, prefix, args, extra):
+		"Names list"
+		return True
+
+	def __366(self, prefix, args, extra):
+		"End of names list"
 		return True
 
 	def __371(self, prefix, args, extra):
@@ -66,6 +77,16 @@ class IRC(gobject.GObject):
 			self.server_msg('NOTICE %s (%s)'%(args, extra))
 		return True
 
+	def __topic(self, prefix, args, extra):
+		print 'topic in', args, 'is', extra
+		return True
+
+	def __join(self, prefix, args, extra):
+		if args is None:
+			args = extra
+		print 'joined', args
+		return True
+
 	def connected(self):
 		self.emit('connected')
 
@@ -106,6 +127,12 @@ class IRC(gobject.GObject):
 		self.disconnected()
 
 	def __dispatch(self, prefix, cmd, args, extra):
+		if len(prefix) == 0:
+			prefix = None
+		if len(args) == 0:
+			args = None
+		if len(extra) == 0:
+			extra = None
 		if isinstance(cmd, int):
 			cb = self.__resp.get(cmd, None)
 		else:
@@ -118,21 +145,23 @@ class IRC(gobject.GObject):
 
 	def __cmd(self, prefix, msg):
 		arr = msg.split(None, 1)
-		cmd = arr[0]
+		cmd = arr[0].strip()
 		if len(arr) > 1:
-			args = arr[1]
+			args = arr[1].strip()
 			arr = args.split(':', 1)
 			if len(arr) > 1:
-				args = arr[0]
-				extra = arr[1]
+				args = arr[0].strip()
+				extra = arr[1].strip()
 			else:
-				extra = None
+				extra = ''
 		else:
-			args = None
-			extra = None
+			args = ''
+			extra = ''
 
 		if cmd.isdigit():
 			cmd = int(cmd)
+		else:
+			cmd = cmd.upper()
 
 		return self.__dispatch(prefix, cmd, args, extra)
 
@@ -146,17 +175,14 @@ class IRC(gobject.GObject):
 			if len(msg) > 1:
 				cmd = arr[1]
 			else:
-				cmd = None
+				cmd = ''
 		else:
-			prefix = None
+			prefix = ''
 			cmd = msg
 
-		if cmd is None:
-			return
 
-		if not self.__cmd(prefix, cmd):
-			self.info_msg('UNKNOWN COMMAND: %s'%msg)
-
+		if len(cmd) == 0 or not self.__cmd(prefix, cmd):
+			self.info_msg(msg)
 
 	def __init__(self):
 		gobject.GObject.__init__(self)
@@ -164,6 +190,8 @@ class IRC(gobject.GObject):
 		self.sock = LineSock() 
 		self.__resp = {
 			001: self.__001,
+			353: self.__353,
+			366: self.__366,
 			372: self.__371,
 			372: self.__372,
 			374: self.__374,
@@ -175,6 +203,8 @@ class IRC(gobject.GObject):
 		self.__cmds = {
 			'PING': self.__ping,
 			'NOTICE': self.__notice,
+			'JOIN': self.__join,
+			'TOPIC': self.__topic,
 		}
 
 

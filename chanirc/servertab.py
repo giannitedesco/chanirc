@@ -14,7 +14,7 @@ class ServerTab(gobject.GObject):
 		self.state = self.STATE_DISCONNECTED
 		self.tab = ChanWin(self.title)
 		self.__sid = None
-		self.__sock = None
+		self.conn = None
 		self.__waitf = None
 
 	def server_msg(self, msg):
@@ -33,13 +33,14 @@ class ServerTab(gobject.GObject):
 	def __chan_msg(self, irc, chan, msg):
 		self.chan_msg(chan, msg)
 
-	def __connected(self, sock):
+	def __connected(self, conn):
 		self.state = self.STATE_CONNECTED
-		self.info_msg('Disconnected.')
 		self.emit('status-update')
+		conn.join('#chanirc')
 
-	def __disconnected(self, sock):
+	def __disconnected(self, conn):
 		self.state = self.STATE_DISCONNECTED
+		self.info_msg('Disconnected.')
 		self.emit('status-update')
 
 	def server(self, hostname, port = 6667):
@@ -47,15 +48,15 @@ class ServerTab(gobject.GObject):
 			self.title = '%s:%d'%(hostname, port)
 		else:
 			self.title = hostname
-		self.__sock = IRC()
+		self.conn = IRC()
 
-		self.__sock.connect('connected', self.__connected)
-		self.__sock.connect('disconnected', self.__disconnected)
-		self.__sock.connect('info-msg', self.__info_msg)
-		self.__sock.connect('server-msg', self.__server_msg)
-		self.__sock.connect('chan-msg', self.__chan_msg)
+		self.conn.connect('connected', self.__connected)
+		self.conn.connect('disconnected', self.__disconnected)
+		self.conn.connect('info-msg', self.__info_msg)
+		self.conn.connect('server-msg', self.__server_msg)
+		self.conn.connect('chan-msg', self.__chan_msg)
 
-		self.__sock.reconnect(hostname, port, 'scara')
+		self.conn.reconnect(hostname, port, 'scara')
 		self.state = self.STATE_CONNECTING
 		self.emit('status-update')
 

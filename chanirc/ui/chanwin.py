@@ -1,7 +1,7 @@
 import gobject, gtk
 
 class ChanWin(gtk.HPaned):
-	def __init__(self, title):
+	def __init__(self, title, userlist = False):
 		gtk.HPaned.__init__(self)
 
 		self.topic = gtk.Entry()
@@ -15,10 +15,11 @@ class ChanWin(gtk.HPaned):
 		chan.pack_start(self.text, True, True)
 		self.pack1(chan, True, True)
 
-		u = gtk.VBox()
-		u.pack_start(self.status, False, False)
-		u.pack_start(self.usrlist, True, True)
-		self.pack2(u, False, False)
+		if userlist:
+			u = gtk.VBox()
+			u.pack_start(self.status, False, False)
+			u.pack_start(self.usrlist, True, True)
+			self.pack2(u, False, False)
 
 
 gobject.signal_new('title-changed', ChanWin,

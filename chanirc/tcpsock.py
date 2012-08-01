@@ -6,6 +6,17 @@ from collections import deque
 import gobject, glib
 
 class TCPSock(gobject.GObject):
+	__gsignals__ = {
+		'data-in': (gobject.SIGNAL_RUN_LAST,
+			gobject.TYPE_NONE, (gobject.TYPE_STRING,)),
+		'connected': (gobject.SIGNAL_RUN_LAST,
+			gobject.TYPE_NONE, ()),
+		'disconnected': (gobject.SIGNAL_RUN_LAST,
+			gobject.TYPE_NONE, ()),
+		'error': (gobject.SIGNAL_RUN_LAST,
+			gobject.TYPE_NONE,
+			(gobject.TYPE_STRING, gobject.TYPE_STRING))
+	}
 	def __init__(self):
 		gobject.GObject.__init__(self)
 		self.__sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
@@ -17,24 +28,31 @@ class TCPSock(gobject.GObject):
 		self.connected = False
 
 	def send(self, msg):
-		print msg
+		# FIXME: handle write-buffer full
 		self.__sock.send(msg)
 
 	def __read(self):
 		msg = self.__sock.recv(4096)
 		self.emit('data-in', msg)
 
+	def do_error(self, op, msg):
+		print 'TCPSock.do_error'
+		self.__sock = None
+
+	def do_connected(self):
+		return
+
 	def __write(self):
 		if not self.connected:
 			ret = self.__sock.getsockopt(SOL_SOCKET, SO_ERROR)
 			if ret:
 				self.emit('error', 'connect', strerror(ret))
-				self.__sock = None
 			else:
-				self.connected = True
 				self.emit('connected')
+				self.connected = True
 				self.set_wait_write(False)
 				self.set_wait_read()
+
 		else:
 			return
 
@@ -80,22 +98,8 @@ class TCPSock(gobject.GObject):
 				self.__cb(-1, 0)
 			else:
 				self.emit('error', 'connect', e.strerror)
-				self.__sock = None
 			return
 
 		self.__connected()
 
 gobject.type_register(TCPSock)
-gobject.signal_new('data-in', TCPSock,
-			gobject.SIGNAL_RUN_FIRST,
-			gobject.TYPE_NONE, (gobject.TYPE_STRING,))
-gobject.signal_new('connected', TCPSock,
-			gobject.SIGNAL_RUN_FIRST,
-			gobject.TYPE_NONE, ())
-gobject.signal_new('disconnected', TCPSock,
-			gobject.SIGNAL_RUN_FIRST,
-			gobject.TYPE_NONE, ())
-gobject.signal_new('error', TCPSock,
-			gobject.SIGNAL_RUN_FIRST,
-			gobject.TYPE_NONE,
-			(gobject.TYPE_STRING, gobject.TYPE_STRING))

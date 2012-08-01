@@ -1,6 +1,6 @@
 import glib, gobject, gtk
 from chanwin import ChanWin
-from tcpsock import TCPSock
+from irc import IRC
 
 class ServerTab(gobject.GObject):
 	STATE_DISCONNECTED = 0,
@@ -17,54 +17,44 @@ class ServerTab(gobject.GObject):
 		self.__sock = None
 		self.__waitf = None
 
-	def svr_msg(self, msg, tags = []):
-		self.tab.msg(msg, tags)
+	def server_msg(self, msg):
+		self.tab.msg(msg, ['purple'])
 
-	def sock_send(self, msg):
-		self.__sock.send(msg + '\r\n')
+	def info_msg(self, msg):
+		self.tab.msg(msg, ['bold', 'purple'])
 
-	def __sockerr(self, sock, op, msg):
-		self.svr_msg('*** %s: %s:%d: %s\n'%(op,
-				sock.peer[0],
-				sock.peer[1],
-				msg),
-				['bold', 'purple'])
-		self.state = self.STATE_DISCONNECTED
-		self.__sock = None
-		self.emit('status-update')
+	def chan_msg(self, chan, msg):
+		self.tab.msg(chan + ':' + msg)
+
+	def __server_msg(self, irc, msg):
+		self.server_msg(msg)
+	def __info_msg(self, irc, msg):
+		self.info_msg(msg)
+	def __chan_msg(self, irc, chan, msg):
+		self.chan_msg(chan, msg)
 
 	def __connected(self, sock):
-		self.svr_msg('*** Connected: %s:%d\n'%(
-				sock.peer[0],
-				sock.peer[1]),
-				['bold', 'purple'])
 		self.state = self.STATE_CONNECTED
 		self.emit('status-update')
-		sock.send('NICK scaramanga\r\n')
 
 	def __disconnected(self, sock):
-		self.svr_msg('*** Disonnected: %s:%d\n'%(
-				sock.peer[0],
-				sock.peer[1]),
-				['bold', 'purple'])
 		self.state = self.STATE_DISCONNECTED
 		self.emit('status-update')
-
-	def __sock_in(self, sock, msg):
-		self.svr_msg(msg)
 
 	def server(self, hostname, port = 6667):
 		if port != 6667:
 			self.title = '%s:%d'%(hostname, port)
 		else:
 			self.title = hostname
-		self.__sock = TCPSock()
-		self.__sock.connect('data-in', self.__sock_in)
+		self.__sock = IRC()
+
 		self.__sock.connect('connected', self.__connected)
 		self.__sock.connect('disconnected', self.__disconnected)
-		self.__sock.connect('error', self.__sockerr)
+		self.__sock.connect('info-msg', self.__info_msg)
+		self.__sock.connect('server-msg', self.__server_msg)
+		self.__sock.connect('chan-msg', self.__chan_msg)
 
-		self.__sock.connect_to(hostname, port)
+		self.__sock.reconnect(hostname, port, 'scara')
 		self.state = self.STATE_CONNECTING
 		self.emit('status-update')
 

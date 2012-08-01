@@ -1,5 +1,5 @@
 import gobject
-from tcpsock import TCPSock
+from linesock import LineSock
 
 class IRC(gobject.GObject):
 	__gsignals__ = {
@@ -23,7 +23,22 @@ class IRC(gobject.GObject):
 		self.server_msg(extra)
 		return True
 
+	def __371(self, prefix, args, extra):
+		"Info"
+		self.server_msg(extra)
+		return True
+
 	def __372(self, prefix, args, extra):
+		"Info, cont."
+		self.server_msg(extra)
+		return True
+
+	def __374(self, prefix, args, extra):
+		"end of INFO"
+		self.server_msg(extra)
+		return True
+
+	def __375(self, prefix, args, extra):
 		"MOTD"
 		self.server_msg(extra)
 		return True
@@ -31,6 +46,7 @@ class IRC(gobject.GObject):
 	def __376(self, prefix, args, extra):
 		"end of MOTD"
 		self.server_msg(extra)
+		self.emit('connected')
 		return True
 
 	def __433(self, prefix, args, extra):
@@ -120,7 +136,7 @@ class IRC(gobject.GObject):
 
 		return self.__dispatch(prefix, cmd, args, extra)
 
-	def __line(self, msg):
+	def __sock_in(self, sock, msg):
 		if len(msg) == 0:
 			return
 
@@ -141,17 +157,17 @@ class IRC(gobject.GObject):
 		if not self.__cmd(prefix, cmd):
 			self.info_msg('UNKNOWN COMMAND: %s'%msg)
 
-	def __sock_in(self, sock, msg):
-		map(self.__line,
-			map(lambda x:x.rstrip('\r\n'), msg.split('\n')))
 
 	def __init__(self):
 		gobject.GObject.__init__(self)
 		self.nick = None
-		self.sock = TCPSock() 
+		self.sock = LineSock() 
 		self.__resp = {
 			001: self.__001,
+			372: self.__371,
 			372: self.__372,
+			374: self.__374,
+			375: self.__375,
 			376: self.__376,
 			433: self.__433,
 		}

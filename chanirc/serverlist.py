@@ -36,6 +36,16 @@ class ServerList(gtk.TreeView):
 	def __svr_update(self, svr):
 		self.__store.set_value(self.__map[svr],
 					self.COL_TEXT, svr.title)
+		if svr.state == svr.STATE_DISCONNECTED:
+			self.__store.set_value(self.__map[svr],
+					self.COL_ICON, 'gtk-stop')
+		elif svr.state == svr.STATE_CONNECTING:
+			self.__store.set_value(self.__map[svr],
+					self.COL_ICON, 'gtk-go-forward')
+		elif svr.state == svr.STATE_CONNECTED:
+			self.__store.set_value(self.__map[svr],
+					self.COL_ICON, 'gtk-home')
+
 
 	def __select_iter(self, i):
 		self.__sel.select_iter(i)
@@ -46,7 +56,7 @@ class ServerList(gtk.TreeView):
 		return self.__tab
 
 	def add_server(self, svr):
-		obj = ('gtk-home', svr.title, None, svr.tab)
+		obj = ('gtk-stop', svr.title, None, svr.tab)
 		i = self.__store.append(None, obj)
 		self.__map[svr] = i
 		self.__select_iter(i)

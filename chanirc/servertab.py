@@ -35,6 +35,7 @@ class ServerTab(gobject.GObject):
 
 	def __connected(self, sock):
 		self.state = self.STATE_CONNECTED
+		self.info_msg('Disconnected.')
 		self.emit('status-update')
 
 	def __disconnected(self, sock):

@@ -19,8 +19,8 @@ class TCPSock(gobject.GObject):
 	}
 	def __init__(self):
 		gobject.GObject.__init__(self)
-		self.__sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
-		self.__sock.setblocking(0)
+		self._sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
+		self._sock.setblocking(0)
 		self.__waitf = 0
 		self.__sid = None
 		self.__wait = False
@@ -29,22 +29,21 @@ class TCPSock(gobject.GObject):
 
 	def send(self, msg):
 		# FIXME: handle write-buffer full
-		self.__sock.send(msg)
+		self._sock.send(msg)
 
-	def __read(self):
-		msg = self.__sock.recv(4096)
+	def _read(self):
+		msg = self._sock.recv(4096)
 		self.emit('data-in', msg)
 
 	def do_error(self, op, msg):
-		print 'TCPSock.do_error'
-		self.__sock = None
+		self._sock = None
 
 	def do_connected(self):
 		return
 
-	def __write(self):
+	def _write(self):
 		if not self.connected:
-			ret = self.__sock.getsockopt(SOL_SOCKET, SO_ERROR)
+			ret = self._sock.getsockopt(SOL_SOCKET, SO_ERROR)
 			if ret:
 				self.emit('error', 'connect', strerror(ret))
 			else:
@@ -58,9 +57,9 @@ class TCPSock(gobject.GObject):
 
 	def __cb(self, fd, flags):
 		if flags & (glib.IO_IN|glib.IO_HUP|glib.IO_ERR):
-			self.__read()
+			self._read()
 		if flags & (glib.IO_OUT):
-			self.__write()
+			self._write()
 		self.wait()
 		return False
 
@@ -71,8 +70,8 @@ class TCPSock(gobject.GObject):
 
 	def wait(self):
 		self.unwait()
-		if self.__sock:
-			self.__sid = glib.io_add_watch(self.__sock.fileno(),
+		if self._sock:
+			self.__sid = glib.io_add_watch(self._sock.fileno(),
 				self.__waitf | glib.IO_HUP | glib.IO_ERR,
 				self.__cb)
 
@@ -91,7 +90,7 @@ class TCPSock(gobject.GObject):
 	def connect_to(self, host, port):
 		self.peer = (host, port)
 		try:
-			self.__sock.connect(self.peer)
+			self._sock.connect(self.peer)
 		except SockError, e:
 			if e.errno == EINPROGRESS:
 				self.set_wait_write()

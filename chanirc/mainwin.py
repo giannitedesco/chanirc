@@ -55,7 +55,13 @@ class MainWin(gtk.Window):
 		svr.server(host)
 
 	def __sel(self, serverlist):
-		self.__vp.add2(serverlist.get_selection())
+		old = self.__vp.get_child2()
+		new = serverlist.get_selection()
+		if old == new:
+			return
+		if old is not None:
+			self.__vp.remove(old)
+		self.__vp.add2(new)
 		self.__vp.show_all()
 
 	def __init__(self):

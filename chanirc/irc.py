@@ -1,9 +1,41 @@
 import gobject
 from linesock import LineSock
 
+class IrcUser:
+	def __init__(self, s):
+		arr = s.split('!', 1)
+		self.nick = arr[0]
+		if len(arr) > 1:
+			arr = arr[1].split('@', 1)
+			self.user = arr[0]
+			if len(arr) > 1:
+				self.host = arr[1]
+			else:
+				self.host = ''
+		else:
+			self.user = ''
+			self.host = ''
+	def __str__(self):
+		return '%s!%s@%s'%(self.nick, self.user, self.host)
+	def __repr__(self):
+		return 'IrcUser(%s!%s@%s)'%(self.nick, self.user, self.host)
+
 class IrcServer(gobject.GObject):
-	def join(self, chan):
-		self.send('JOIN %s'%chan)
+	# to be overriddem
+	def _connecting(self):
+		pass
+	def _connected(self):
+		pass
+	def _disconnected(self):
+		pass
+	def _set_topic(self, chan, topic):
+		pass
+	def _join(self, chan, user):
+		pass
+	def _part(self, chan, user):
+		pass
+	def _name_list(self, chan, name):
+		pass
 
 	def __dispatch(self, prefix, cmd, args, extra):
 		if len(prefix) == 0:
@@ -47,7 +79,7 @@ class IrcServer(gobject.GObject):
 	def __init__(self):
 		gobject.GObject.__init__(self)
 		self.nick = None
-		self.sock = LineSock() 
+		self.sock = None
 
 		def r001(prefix, args, extra):
 			"connected"
@@ -56,12 +88,11 @@ class IrcServer(gobject.GObject):
 
 		def r353(prefix, args, extra):
 			"Names list"
-			print 'names', prefix, args, extra
+			self._name_list(args, extra)
 			return True
 
 		def r366(prefix, args, extra):
 			"End of names list"
-			print 'end of names', prefix, args, extra
 			return True
 
 		def r371(prefix, args, extra):
@@ -108,7 +139,6 @@ class IrcServer(gobject.GObject):
 		}
 
 		def ping(prefix, args, extra):
-			print 'PING', args
 			self.send('PONG :%s'%extra)
 			return True
 
@@ -120,24 +150,34 @@ class IrcServer(gobject.GObject):
 			return True
 
 		def topic(prefix, args, extra):
-			print 'topic in', args, 'is', extra
+			self._set_topic(args, extra)
 			return True
 
 		def join(prefix, args, extra):
 			if args is None:
 				args = extra
-			print prefix, 'joined', args
+			self._join(args, IrcUser(prefix))
+			return True
+
+		def part(prefix, args, extra):
+			if args is None:
+				args = extra
+			self._part(args, IrcUser(prefix))
 			return True
 
 		self.__cmds = {
 			'PING': ping,
 			'NOTICE': notice,
 			'JOIN': join,
+			'PART': join,
 			'TOPIC': topic,
 		}
 
 	def send(self, cmd):
 		self.sock.send(cmd + '\r\n')
+
+	def join(self, chan):
+		self.send('JOIN %s'%chan)
 
 	def server(self, host, port, nick):
 		def sockerr(sock, op, msg):
@@ -145,6 +185,7 @@ class IrcServer(gobject.GObject):
 					sock.peer[0],
 					sock.peer[1],
 					msg))
+			self.sock = None
 			self._disconnected()
 
 		def connected(sock):
@@ -158,6 +199,7 @@ class IrcServer(gobject.GObject):
 			self.info_msg('*** Disonnected: %s:%d'%(
 					sock.peer[0],
 					sock.peer[1]))
+			self.sock = None
 			self._disconnected()
 
 		def sock_in(sock, msg):
@@ -178,11 +220,15 @@ class IrcServer(gobject.GObject):
 			if len(cmd) == 0 or not self.__cmd(prefix, cmd):
 				self.info_msg(msg)
 
-
+		self.sock = LineSock() 
 		self.nick = nick
 		self.sock.connect('data-in', sock_in)
 		self.sock.connect('connected', connected)
 		self.sock.connect('disconnected', disconnected)
 		self.sock.connect('error', sockerr)
-		self.sock.connect_to(host, port)
 		self._connecting()
+		self.sock.connect_to(host, port)
+
+	def disconnect(self):
+		self.sock = None
+		self._disconnected()

@@ -33,13 +33,35 @@ class ServerList(gtk.TreeView):
 		self.cur_svr = None
 		self.__tab = None
 
-	def __select_iter(self, i):
-		self.__sel.select_iter(i)
+		self.__sel.connect('changed', self.__sel_change)
+
+	def __sel_change(self, sel):
+		(model, i) = sel.get_selected()
 		self.__tab = self.__store.get_value(i, self.COL_TAB)
 		self.emit('selection-changed')
 
+	def __select_iter(self, i):
+		self.__sel.select_iter(i)
+
 	def get_selection(self):
 		return self.__tab
+
+	def add_chan(self, svr, chan):
+		ch = ('gtk-edit', chan.chan, None, chan)
+		itr = self.__map[svr]
+		chanitr = self.__store.append(itr, ch)
+
+		self.__map[chan] = chanitr
+
+		self.expand_to_path(self.__store.get_path(chanitr))
+		self.__select_iter(chanitr)
+
+	def remove_chan(self, svr, chan):
+		chanitr = self.__map[chan]
+		itr = self.__map[svr]
+		self.__select_iter(itr)
+		self.__store.remove(chanitr)
+		del self.__map[chan]
 
 	def add_server(self, svr):
 		obj = ('gtk-stop', svr.title, None, svr.tab)
@@ -67,6 +89,8 @@ class ServerList(gtk.TreeView):
 		svr.connect('connected', connected)
 		svr.connect('connecting', connecting)
 		svr.connect('disconnected', disconnected)
+		svr.connect('add-channel', self.add_chan)
+		svr.connect('remove-channel', self.remove_chan)
 
 gobject.type_register(ServerList)
 gobject.signal_new('selection-changed', ServerList,

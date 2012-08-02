@@ -12,13 +12,13 @@ class ChanWin(gtk.HPaned):
 			tag.set_property('foreground', x)
 			tag.set_property('foreground-set', True)
 
-	def __init__(self, title, userlist = False):
+	def __init__(self, userlist = True):
 		gtk.HPaned.__init__(self)
 
 		self.topic = gtk.Entry()
 
 		self.text = gtk.TextView()
-		self.text.set_border_window_size(gtk.TEXT_WINDOW_LEFT, 8)
+		#self.text.set_border_window_size(gtk.TEXT_WINDOW_LEFT, 8)
 		self.text.set_editable(False)
 		self.text.set_cursor_visible(False)
 		self.text.set_wrap_mode(gtk.WRAP_WORD)
@@ -50,9 +50,3 @@ class ChanWin(gtk.HPaned):
 		i = buf.get_iter_at_offset(buf.get_char_count())
 		buf.place_cursor(i)
 		self.text.scroll_to_iter(i, 0.0)
-		
-
-
-gobject.signal_new('title-changed', ChanWin,
-			gobject.SIGNAL_RUN_FIRST,
-			gobject.TYPE_NONE, (gobject.TYPE_STRING,))

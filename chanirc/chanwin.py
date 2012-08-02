@@ -1,6 +1,38 @@
 import gobject, gtk, pango
 from webthread import WebPool
 
+class UserList(gtk.TreeView):
+	def __init__(self):
+		self.store = gtk.ListStore(gobject.TYPE_STRING)
+		gtk.TreeView.__init__(self, self.store)
+
+		self.set_headers_visible(False)
+		self.set_headers_clickable(False)
+		self.set_enable_search(False)
+		self.set_search_column(0)
+
+		r = gtk.CellRendererText()
+		col = gtk.TreeViewColumn('Users', None)
+		col.pack_start(r, True)
+		col.add_attribute(r, 'text', 0)
+		col.set_resizable(True)
+		self.append_column(col)
+		self.set_size_request(120, -1)
+
+		self.m = {}
+
+	def append(self, nick):
+		itr = self.m.get(nick, None)
+		if itr is None:
+			itr = self.store.append((nick, ))
+			self.m[nick] = itr
+
+	def delete(self, nick):
+		itr = self.m.get(nick, None)
+		if itr is None:
+			return
+		self.store.remove(itr)
+
 class ChanWin(gtk.HPaned):
 	def __setup_tags(self, buf):
 		tag = buf.create_tag('font')
@@ -38,7 +70,7 @@ class ChanWin(gtk.HPaned):
 		scr.add(self.text)
 
 		self.status = gtk.Label('32 ops, 38 total')
-		self.usrlist = gtk.TreeView()
+		self.usrlist = UserList();
 
 		chan = gtk.VBox()
 
@@ -50,7 +82,10 @@ class ChanWin(gtk.HPaned):
 		if userlist:
 			u = gtk.VBox()
 			u.pack_start(self.status, False, False)
-			u.pack_start(self.usrlist, True, True)
+			scr = gtk.ScrolledWindow()
+			scr.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+			scr.add(self.usrlist)
+			u.pack_start(scr, True, True)
 			self.pack2(u, False, False)
 
 	def scale_image(self, pic):
@@ -106,8 +141,11 @@ class ChanWin(gtk.HPaned):
 			if not is_url(x):
 				continue
 			def Closure(pic):
+				try:
+					img = self.scale_image(pic)
+				except:
+					return
 				itr = buf.get_iter_at_mark(mark)
-				img = self.scale_image(pic)
 				anchor = buf.create_child_anchor(itr)
 				self.text.add_child_at_anchor(img, anchor)
 				buf.insert(itr, '\n')

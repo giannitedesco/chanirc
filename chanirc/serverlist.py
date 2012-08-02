@@ -53,7 +53,9 @@ class ServerList(gtk.TreeView):
 		self.__select_iter(chanitr)
 
 	def remove_chan(self, svr, chan):
-		chanitr = self.__map[chan]
+		chanitr = self.__map.get(chan, None)
+		if chanitr is None:
+			return
 		itr = self.__map[svr]
 		self.__select_iter(itr)
 		self.__store.remove(chanitr)

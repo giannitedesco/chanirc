@@ -105,7 +105,8 @@ class IrcServer(gobject.GObject):
 			if '=' in args:
 				arr = map(lambda x:x.strip(), args.split('='))
 				args = arr[1]
-			self._name_list(args, extra)
+			for x in extra.split():
+				self._name_list(args, x)
 			return True
 
 		def r366(prefix, args, extra):

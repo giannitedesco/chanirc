@@ -1,23 +1,7 @@
 import glib, gobject, gtk
+from ircchan import IrcChan
 from chanwin import ChanWin
 from irc import IrcServer
-
-class IrcChan(ChanWin):
-	def __init__(self, servertab, name):
-		ChanWin.__init__(self, servertab)
-		self.chan = name
-		self.__nicks = {}
-	def __str__(self):
-		return self.chan
-	def __repr__(self):
-		return 'IrcChan(%s)'%(self.chan)
-	def add_nick(self, nick):
-		self.__nicks[nick] = None
-	def remove_nick(self, nick):
-		if self.__nicks.has_key(nick):
-			del self.__nicks[nick]
-	def __iter__(self):
-		return iter(self.__nicks)
 
 class ServerTab(IrcServer):
 	__gsignals__ = {

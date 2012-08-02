@@ -1,4 +1,5 @@
 import gobject, gtk, pango
+from webthread import WebPool
 
 class ChanWin(gtk.HPaned):
 	def __setup_tags(self, buf):
@@ -18,6 +19,7 @@ class ChanWin(gtk.HPaned):
 
 	def __init__(self, servertab, userlist = True):
 		gtk.HPaned.__init__(self)
+		self.web = WebPool()
 
 		self.servertab = servertab
 
@@ -57,4 +59,38 @@ class ChanWin(gtk.HPaned):
 		buf.insert_with_tags_by_name(i, msg, *tags)
 		i = buf.get_iter_at_offset(buf.get_char_count())
 		buf.place_cursor(i)
+
+		if not '\n' in msg:
+			return
+
 		self.text.scroll_to_iter(i, 0.0)
+
+		def is_url(s):
+			def begins_with(s, prefix):
+				if len(s) < len(prefix):
+					return False
+				return s[:len(prefix)] == prefix
+			if begins_with(s, 'http://'):
+				return True
+			if begins_with(s, 'https://'):
+				return True
+			if begins_with(s, 'www'):
+				return True
+			return False
+
+		for x in msg.split():
+			if not is_url(x):
+				continue
+			def Closure(pic):
+				ldr = gtk.gdk.PixbufLoader()
+				ldr.set_size(64, 48)
+				ldr.write(pic)
+				ldr.close()
+				pixbuf = ldr.get_pixbuf()
+				img = gtk.image_new_from_pixbuf(pixbuf)
+				img.show_all()
+				anchor = buf.create_child_anchor(i)
+				self.text.add_child_at_anchor(img, anchor)
+				buf.insert(i, '\n')
+				return
+			self.web.get_image(x, Closure)

@@ -3,10 +3,6 @@ from collections import deque
 import httplib
 import threading
 
-from webparser import WebParser
-from formripper import FormRipper
-from camripper import CamRipper
-
 class WorkQueue(threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
@@ -81,7 +77,13 @@ class WebPool:
 		return conn
 
 	def get_image(self, url, cb, err = None):
-		url = urlparse(url)
+		try:
+			u = urlparse(url)
+		except:
+			u = None
+			pass
+		if u is None or u.scheme == '':
+			u = urlparse(url, scheme = 'http')
 		def Closure(r, data):
 			if isinstance(r, Exception) or r.status != 200:
 				if err:
@@ -89,6 +91,6 @@ class WebPool:
 				return
 			cb(data)
 
-		conn = self.get_conn(url)
-		req = WebReq(Closure, url)
+		conn = self.get_conn(u)
+		req = WebReq(Closure, u)
 		conn.pushreq(req)

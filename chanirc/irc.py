@@ -222,7 +222,7 @@ class IrcServer(gobject.GObject):
 			self.info_msg('*** Connected: %s:%d'%(
 					sock.peer[0],
 					sock.peer[1]))
-			self.send('USER %s * * :Description'%self.nick)
+			self.send('USER %s * * :chanirc'%self.nick)
 			self.send('NICK %s'%self.nick)
 
 		def disconnected(sock):

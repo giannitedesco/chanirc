@@ -28,11 +28,25 @@ class TCPSock(gobject.GObject):
 		self.connected = False
 
 	def send(self, msg):
-		# FIXME: handle write-buffer full
-		self._sock.send(msg)
+		try:
+			self._sock.send(msg)
+		except SockError, e:
+			if e.errno == EAGAIN:
+				# FIXME: handle write-buffer full
+				return
+			else:
+				self.emit('error', 'send', e.strerror)
+				return
 
 	def _read(self):
-		msg = self._sock.recv(4096)
+		try:
+			msg = self._sock.recv(4096)
+		except SockError, e:
+			if e.errno == EAGAIN:
+				return
+			else:
+				self.emit('error', 'recv', e.strerror)
+				return
 		self.emit('data-in', msg)
 
 	def do_error(self, op, msg):
@@ -92,7 +106,7 @@ class TCPSock(gobject.GObject):
 		try:
 			self._sock.connect(self.peer)
 		except SockError, e:
-			if e.errno == EINPROGRESS:
+			if e.errno == EINPROGRESS or e.errno == EAGAIN:
 				self.set_wait_write()
 				self.__cb(-1, 0)
 			else:

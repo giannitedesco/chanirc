@@ -46,7 +46,7 @@ class WebConn(WorkQueue):
 		WorkQueue.__init__(self)
 		self.hostname = u.hostname
 		self.port = u.port
-		print 'conn:', u.hostname, u.port
+		print 'conn:', u.scheme, u.hostname, u.port
 		self.conn = httplib.HTTPConnection(u.hostname, u.port)
 	def pushreq(self, req):
 		assert(req.url.hostname == self.hostname)
@@ -70,10 +70,10 @@ class WebPool:
 		self.conn = {}
 
 	def get_conn(self, url):
-		conn = self.conn.get((url.hostname, url.port), None)
+		conn = self.conn.get((url.scheme, url.hostname, url.port), None)
 		if conn is None:
 			conn = WebConn(url)
-			self.conn[(url.hostname, url.port)] = conn
+			self.conn[(url.scheme, url.hostname, url.port)] = conn
 		return conn
 
 	def get_image(self, url, cb, err = None):
@@ -84,6 +84,9 @@ class WebPool:
 			pass
 		if u is None or u.scheme == '':
 			u = urlparse(url, scheme = 'http')
+		if u.hostname is None:
+			return
+
 		def Closure(r, data):
 			if isinstance(r, Exception) or r.status != 200:
 				if err:

@@ -186,9 +186,11 @@ class IrcServer(gobject.GObject):
 
 		def privmsg(prefix, args, extra):
 			self._privmsg(IrcUser(prefix), args, extra)
+			return True
 
 		def quit(prefix, args, extra):
 			self._quit(IrcUser(prefix), extra)
+			return True
 
 		self.__cmds = {
 			'PING': ping,

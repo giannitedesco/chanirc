@@ -45,7 +45,10 @@ class WebConn(WorkQueue):
 		self.hostname = u.hostname
 		self.port = u.port
 		self.scheme = u.scheme
-		self.cache_dir = path.join(environ["HOME"], ".chanirc/cache")
+		p = environ.get('HOME')
+		if p is None:
+			p = environ.get('APPDATA')
+		self.cache_dir = path.join(p, ".chanirc/cache")
 		self.conn = httplib2.Http(cache = self.cache_dir)
 	def pushreq(self, req):
 		assert(req.url.hostname == self.hostname)

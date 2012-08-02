@@ -101,13 +101,15 @@ class ChanWin(gtk.HPaned):
 				return True
 			return False
 
+		mark = buf.create_mark(None, i, left_gravity = True)
 		for x in msg.split():
 			if not is_url(x):
 				continue
 			def Closure(pic):
+				itr = buf.get_iter_at_mark(mark)
 				img = self.scale_image(pic)
-				anchor = buf.create_child_anchor(i)
+				anchor = buf.create_child_anchor(itr)
 				self.text.add_child_at_anchor(img, anchor)
-				buf.insert(i, '\n')
+				buf.insert(itr, '\n')
 				return
 			self.web.get_image(x, Closure)

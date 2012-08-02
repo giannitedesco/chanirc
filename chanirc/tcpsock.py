@@ -47,6 +47,10 @@ class TCPSock(gobject.GObject):
 			else:
 				self.emit('error', 'recv', e.strerror)
 				return
+		if msg == '':
+			self.emit('disconnected')
+			return
+
 		self.emit('data-in', msg)
 
 	def do_error(self, op, msg):

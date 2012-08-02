@@ -7,16 +7,19 @@ class LineSock(TCPSock):
 
 	def _read(self):
 		try:
-			self.__buf += self._sock.recv(4096)
+			new = self._sock.recv(4096)
 		except SockError, e:
 			if e.errno == EINPROGRESS or e.errno == EAGAIN:
 				return
 			else:
 				self.emit('error', 'recv', e.strerror)
 				return
-		except:
-			raise
 
+		if new == '':
+			self.emit('disconnected')
+			return
+
+		self.__buf += new
 		while '\n' in self.__buf:
 			(msg, rest) = self.__buf.split('\n', 1)
 			msg = msg.rstrip('\r')

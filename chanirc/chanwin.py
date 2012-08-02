@@ -23,6 +23,8 @@ class ChanWin(gtk.HPaned):
 
 		self.servertab = servertab
 
+		self.img_max_height = 192
+
 		self.topic = gtk.Entry()
 
 		self.text = gtk.TextView()
@@ -50,6 +52,27 @@ class ChanWin(gtk.HPaned):
 			u.pack_start(self.status, False, False)
 			u.pack_start(self.usrlist, True, True)
 			self.pack2(u, False, False)
+
+	def scale_image(self, pic):
+		def got_size(ldr, width, height):
+
+			if height < self.img_max_height:
+				return
+
+			ratio = float(width) / float(height)
+			scale = self.img_max_height / float(height)
+
+			ldr.set_size(int(scale * float(width)),
+					int(scale * float(height)))
+
+		ldr = gtk.gdk.PixbufLoader()
+		ldr.connect('size-prepared', got_size)
+		ldr.write(pic)
+		ldr.close()
+		pixbuf = ldr.get_pixbuf()
+		img = gtk.image_new_from_pixbuf(pixbuf)
+		img.show_all()
+		return img
 
 	def msg(self, msg, tags = []):
 		tags.append('font')
@@ -82,13 +105,7 @@ class ChanWin(gtk.HPaned):
 			if not is_url(x):
 				continue
 			def Closure(pic):
-				ldr = gtk.gdk.PixbufLoader()
-				ldr.set_size(64, 48)
-				ldr.write(pic)
-				ldr.close()
-				pixbuf = ldr.get_pixbuf()
-				img = gtk.image_new_from_pixbuf(pixbuf)
-				img.show_all()
+				img = self.scale_image(pic)
 				anchor = buf.create_child_anchor(i)
 				self.text.add_child_at_anchor(img, anchor)
 				buf.insert(i, '\n')

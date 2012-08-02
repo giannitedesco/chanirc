@@ -1,7 +1,8 @@
 from urlparse import urlparse
 from collections import deque
-import httplib
+import httplib2
 import threading
+from os import environ, path
 
 class WorkQueue(threading.Thread):
 	def __init__(self):
@@ -44,35 +45,25 @@ class WebConn(WorkQueue):
 		self.hostname = u.hostname
 		self.port = u.port
 		self.scheme = u.scheme
-		self.reconnect()
-	def reconnect(self):
-		print 'conn:', self.scheme, self.hostname, self.port
-		if self.scheme == 'https':
-			self.conn = httplib.HTTPSConnection(self.hostname,
-								self.port)
-		else:
-			self.conn = httplib.HTTPConnection(self.hostname,
-								self.port)
+		self.cache_dir = path.join(environ["HOME"], ".chanirc/cache")
+		self.conn = httplib2.Http(cache = self.cache_dir)
 	def pushreq(self, req):
 		assert(req.url.hostname == self.hostname)
 		assert(req.url.port == self.port)
 		self.push(req)
 	def _do_work(self, req):
-		retry = 3
-		while retry:
-			try:
-				self.conn.request(req.method, req.url.path,
-						req.content, req.headers)
-				r = self.conn.getresponse()
-				d = r.read()
-				retry = 0
-			except Exception, e:
-				self.reconnect()
-				r = e
-				d = None
-				retry -= 1
+		try:
+			(r, d) = self.conn.request(req.url.geturl())
+		except Exception, e:
+			raise
+			(r, d) = (e, None)
 
 		req.cb(r, d)
+
+def begins_with(s, prefix):
+	if len(s) < len(prefix):
+		return False
+	return s[:len(prefix)] == prefix
 
 class WebPool:
 	def __init__(self, login = None, pwd = None):
@@ -102,12 +93,15 @@ class WebPool:
 			return
 
 		def Closure(r, data):
-			if isinstance(r, Exception) or r.status != 200:
+			if isinstance(r, Exception) or \
+				r.status != 200 or \
+				not begins_with(r['content-type'], 'image/'):
 				if err:
 					err(r)
-				print r
-				return
-			cb(data)
+				else:
+					return
+			else:
+				cb(data)
 
 		conn = self.get_conn(u)
 		req = WebReq(Closure, u)

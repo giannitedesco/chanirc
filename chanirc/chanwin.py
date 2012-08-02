@@ -90,7 +90,6 @@ class ChanWin(gtk.HPaned):
 
 	def scale_image(self, pic):
 		def got_size(ldr, width, height):
-
 			if height < self.img_max_height:
 				return
 
@@ -102,7 +101,10 @@ class ChanWin(gtk.HPaned):
 
 		ldr = gtk.gdk.PixbufLoader()
 		ldr.connect('size-prepared', got_size)
-		ldr.write(pic)
+		try:
+			ldr.write(pic)
+		except:
+			return None
 		ldr.close()
 		pixbuf = ldr.get_pixbuf()
 		img = gtk.image_new_from_pixbuf(pixbuf)
@@ -140,14 +142,17 @@ class ChanWin(gtk.HPaned):
 		for x in msg.split():
 			if not is_url(x):
 				continue
+
 			def Closure(pic):
-				try:
-					img = self.scale_image(pic)
-				except:
+				gtk.gdk.threads_enter()
+				img = self.scale_image(pic)
+				if img is None:
+					gtk.gdk.threads_leave()
 					return
 				itr = buf.get_iter_at_mark(mark)
 				anchor = buf.create_child_anchor(itr)
 				self.text.add_child_at_anchor(img, anchor)
 				buf.insert(itr, '\n')
-				return
+				gtk.gdk.threads_leave()
+
 			self.web.get_image(x, Closure)

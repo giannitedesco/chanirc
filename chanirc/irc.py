@@ -141,7 +141,7 @@ class IrcServer(gobject.GObject):
 
 		def r433(prefix, args, extra):
 			"Nick already taken"
-			self.info_msg('Nick already taken: '%extra)
+			self.info_msg('Nick already taken: %s'%extra)
 			return True
 
 		self.resp_tbl = {

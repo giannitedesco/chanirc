@@ -27,6 +27,13 @@ class TCPSock(gobject.GObject):
 		self.peer = (None, None)
 		self.connected = False
 
+	def close(self):
+		self.unwait()
+		self._sock.close()
+
+	def __del__(self):
+		self.close()
+
 	def send(self, msg):
 		try:
 			self._sock.send(msg)

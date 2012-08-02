@@ -1,4 +1,6 @@
 from tcpsock import TCPSock
+from socket import error as SockError
+from errno import EINPROGRESS, EAGAIN
 
 class LineSock(TCPSock):
 	def __init__(self):

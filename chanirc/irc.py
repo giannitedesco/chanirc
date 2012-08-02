@@ -28,7 +28,7 @@ class IrcServer(gobject.GObject):
 		pass
 	def _disconnected(self):
 		pass
-	def _set_topic(self, chan, topic):
+	def _set_topic(self, user, chan, topic):
 		pass
 	def _join(self, chan, user):
 		pass
@@ -97,7 +97,7 @@ class IrcServer(gobject.GObject):
 				chan = arr[1]
 			else:
 				chan = args
-			self._set_topic(chan, extra)
+			self._set_topic(None, chan, extra)
 			return True
 
 		def r353(prefix, args, extra):
@@ -169,7 +169,7 @@ class IrcServer(gobject.GObject):
 			return True
 
 		def topic(prefix, args, extra):
-			self._set_topic(args, extra)
+			self._set_topic(IrcUser(prefix), args, extra)
 			return True
 
 		def join(prefix, args, extra):
@@ -196,7 +196,7 @@ class IrcServer(gobject.GObject):
 			'PING': ping,
 			'NOTICE': notice,
 			'JOIN': join,
-			'PART': join,
+			'PART': part,
 			'TOPIC': topic,
 			'PRIVMSG': privmsg,
 			'QUIT': quit,
@@ -207,6 +207,12 @@ class IrcServer(gobject.GObject):
 
 	def join(self, chan):
 		self.send('JOIN %s'%chan)
+
+	def part(self, chan):
+		self.send('PART %s'%(chan))
+
+	def topic(self, chan, msg):
+		self.send('TOPIC %s :%s'%(chan, msg))
 
 	def privmsg(self, chan, msg):
 		self.send('PRIVMSG %s :%s'%(chan, msg))
@@ -262,5 +268,7 @@ class IrcServer(gobject.GObject):
 		self.sock.connect_to(host, port)
 
 	def disconnect(self):
+		if self.sock is not None:
+			self.sock.close()
 		self.sock = None
 		self._disconnected()

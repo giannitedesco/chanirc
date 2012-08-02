@@ -39,28 +39,39 @@ class WebReq:
 		self.cb = cb
 
 class WebConn(WorkQueue):
-	USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:14.0) Gecko/20100101 Firefox/14.0.1'
-	ACCEPT_LANG = 'en-us,en;q=0.5'
-
 	def __init__(self, u):
 		WorkQueue.__init__(self)
 		self.hostname = u.hostname
 		self.port = u.port
-		print 'conn:', u.scheme, u.hostname, u.port
-		self.conn = httplib.HTTPConnection(u.hostname, u.port)
+		self.scheme = u.scheme
+		self.reconnect()
+	def reconnect(self):
+		print 'conn:', self.scheme, self.hostname, self.port
+		if self.scheme == 'https':
+			self.conn = httplib.HTTPSConnection(self.hostname,
+								self.port)
+		else:
+			self.conn = httplib.HTTPConnection(self.hostname,
+								self.port)
 	def pushreq(self, req):
 		assert(req.url.hostname == self.hostname)
 		assert(req.url.port == self.port)
 		self.push(req)
 	def _do_work(self, req):
-		try:
-			self.conn.request(req.method, req.url.path,
-					req.content, req.headers)
-			r = self.conn.getresponse()
-			d = r.read()
-		except Exception, e:
-			r = e
-			d = None
+		retry = 3
+		while retry:
+			try:
+				self.conn.request(req.method, req.url.path,
+						req.content, req.headers)
+				r = self.conn.getresponse()
+				d = r.read()
+				retry = 0
+			except Exception, e:
+				self.reconnect()
+				r = e
+				d = None
+				retry -= 1
+
 		req.cb(r, d)
 
 class WebPool:
@@ -94,6 +105,7 @@ class WebPool:
 			if isinstance(r, Exception) or r.status != 200:
 				if err:
 					err(r)
+				print r
 				return
 			cb(data)
 

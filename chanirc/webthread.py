@@ -55,8 +55,15 @@ class WebConn(WorkQueue):
 		assert(req.url.port == self.port)
 		self.push(req)
 	def _do_work(self, req):
+		url = req.url.geturl()
 		try:
-			(r, d) = self.conn.request(req.url.geturl())
+			while True:
+				(r, d) = self.conn.request(url)
+				if r.status == 404 and url[-1:] == ')':
+					url = url[:-1]
+					continue
+				else:
+					break
 		except Exception, e:
 			raise
 			(r, d) = (e, None)

@@ -61,7 +61,7 @@ class TCPSock(gobject.GObject):
 		self.emit('data-in', msg)
 
 	def do_error(self, op, msg):
-		self._sock = None
+		self.close()
 
 	def do_connected(self):
 		return

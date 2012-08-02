@@ -37,11 +37,15 @@ class ServerTab(IrcServer):
 		def part(win, chan, args):
 			if chan is None:
 				chan = args
+			if self.state != self.STATE_CONNECTED:
+				return
 			self.part(chan)
 
 		def join(win, chan, args):
 			if not len(args):
 				win.msg('Must specify a channel to join\n')
+				return
+			if self.state != self.STATE_CONNECTED:
 				return
 			self.join(args)
 
@@ -59,16 +63,22 @@ class ServerTab(IrcServer):
 
 		def privmsg(win, chan, args):
 			tab = self.get_chan(chan)
+			if tab is None:
+				return
 			tab.msg('<%s> '%self.nick, ['dark green'])
 			tab.msg(args + '\n')
 			self.privmsg(chan, args)
 
 		def action(win, chan, args):
 			tab = self.get_chan(chan)
+			if tab is None:
+				return
 			tab.msg('*** %s %s\n'%(self.nick, args), ['dark green'])
 			self.action(chan, args)
 
 		def reconnect(win, chan, args):
+			if self.sock is None:
+				return
 			self.server(self.sock.peer[0], self.sock.peer[1])
 
 		def disconnect(win, chan, args):
@@ -87,6 +97,8 @@ class ServerTab(IrcServer):
 		}
 
 	def get_chan(self, chan):
+		if self.state != self.STATE_CONNECTED:
+			return None
 		if chan in self.channels:
 			return self.channels[chan]
 		else:
@@ -103,6 +115,8 @@ class ServerTab(IrcServer):
 
 	def chan_msg(self, chan, msg):
 		tab = self.get_chan(chan)
+		if tab is None:
+			return
 		tab.msg(msg + '\n')
 
 	def _connected(self):
@@ -121,6 +135,8 @@ class ServerTab(IrcServer):
 
 	def _set_topic(self, user, chan, topic):
 		tab = self.get_chan(chan)
+		if tab is None:
+			return
 		tab.topic.set_text(topic)
 		if user is None:
 			tab.msg('topic in %s is %s\n'%(chan, topic),
@@ -131,6 +147,8 @@ class ServerTab(IrcServer):
 
 	def _join(self, chan, user):
 		tab = self.get_chan(chan)
+		if tab is None:
+			return
 		tab.msg('%s (%s@%s) joined %s\n'%(user.nick,
 						user.user,
 						user.host,
@@ -139,6 +157,8 @@ class ServerTab(IrcServer):
 
 	def _part(self, chan, user):
 		tab = self.get_chan(chan)
+		if tab is None:
+			return
 		tab.msg('%s left %s\n'%(user, chan))
 		tab.remove_nick(user.nick)
 		if user.nick == self.nick:
@@ -146,15 +166,21 @@ class ServerTab(IrcServer):
 
 	def _name_list(self, chan, name):
 		tab = self.get_chan(chan)
+		if tab is None:
+			return
 		tab.add_nick(name)
 
 	def _privmsg(self, user, chan, msg):
 		tab = self.get_chan(chan)
+		if tab is None:
+			return
 		tab.msg('<%s> '%user.nick, ['dark blue'])
 		tab.msg(msg + '\n')
 
 	def _action(self, user, chan, msg):
 		tab = self.get_chan(chan)
+		if tab is None:
+			return
 		tab.msg('*** %s %s\n'%(user.nick, msg), ['dark bluet'])
 
 	def _quit(self, user, msg):

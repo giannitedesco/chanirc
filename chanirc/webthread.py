@@ -83,7 +83,10 @@ class WebPool:
 			u = None
 			pass
 		if u is None or u.scheme == '':
-			u = urlparse(url, scheme = 'http')
+			try:
+				u = urlparse(url, scheme = 'http')
+			except:
+				return
 		if u.hostname is None:
 			return
 

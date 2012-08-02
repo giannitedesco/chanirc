@@ -86,6 +86,16 @@ class IrcServer(gobject.GObject):
 			self.server_msg(extra)
 			return True
 
+		def r332(prefix, args, extra):
+			"Topic"
+			arr = args.split(None, 1)
+			if len(arr) > 1:
+				chan = arr[1]
+			else:
+				chan = args
+			self._set_topic(chan, extra)
+			return True
+
 		def r353(prefix, args, extra):
 			"Names list"
 			self._name_list(args, extra)
@@ -128,6 +138,7 @@ class IrcServer(gobject.GObject):
 
 		self.resp_tbl = {
 			001: r001,
+			332: r332,
 			353: r353,
 			366: r366,
 			372: r371,
@@ -165,12 +176,16 @@ class IrcServer(gobject.GObject):
 			self._part(args, IrcUser(prefix))
 			return True
 
+		def privmsg(prefix, args, extra):
+			self._privmsg(IrcUser(prefix), args, extra)
+
 		self.__cmds = {
 			'PING': ping,
 			'NOTICE': notice,
 			'JOIN': join,
 			'PART': join,
 			'TOPIC': topic,
+			'PRIVMSG': privmsg,
 		}
 
 	def send(self, cmd):
@@ -178,6 +193,9 @@ class IrcServer(gobject.GObject):
 
 	def join(self, chan):
 		self.send('JOIN %s'%chan)
+
+	def privmsg(self, chan, msg):
+		self.send('PRIVMSG %s :%s'%(chan, msg))
 
 	def server(self, host, port, nick):
 		def sockerr(sock, op, msg):

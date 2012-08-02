@@ -15,8 +15,10 @@ class ChanWin(gtk.HPaned):
 			tag.set_property('foreground', x)
 			tag.set_property('foreground-set', True)
 
-	def __init__(self, userlist = True):
+	def __init__(self, servertab, userlist = True):
 		gtk.HPaned.__init__(self)
+
+		self.servertab = servertab
 
 		self.topic = gtk.Entry()
 
@@ -34,6 +36,7 @@ class ChanWin(gtk.HPaned):
 		self.usrlist = gtk.TreeView()
 
 		chan = gtk.VBox()
+
 		if userlist:
 			chan.pack_start(self.topic, False, False)
 		chan.pack_start(scr, True, True)

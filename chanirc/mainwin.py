@@ -31,32 +31,17 @@ class MainWin(gtk.Window):
 		self.in_main = False
 
 	def send(self, s):
-		if s[0] == '/':
-			arr = s[1:].split(None, 1)
-			if len(arr) < 2:
-				arr.append(None)
-			(cmd, args) = arr
-			cb = self.__cmd.get(cmd.lower(), None)
-			if cb is None:
-				print 'unknown cmd:', cmd
-				return
-			else:
-				cb(args)
-		else:
-			print 'chat: %s'%s
+		win = self.serverlist.cur
+		if win is None:
+			raise Exception('ugh...')
+		win.servertab.send_chat(win, s)
 
 	def __send(self, _, s):
 		self.send(s)
 
-	def cmd_server(self, host):
-		svr = self.serverlist.cur_svr
-		if svr is None or host is None:
-			raise Exception('ugh...')
-		svr.server(host)
-
 	def __sel(self, serverlist):
 		old = self.__vp.get_child2()
-		new = serverlist.get_selection()
+		new = serverlist.cur
 		if old == new:
 			return
 		if old is not None:
@@ -92,6 +77,3 @@ class MainWin(gtk.Window):
 		self.__vp.add1(self.serverlist)
 
 		self.set_focus(self.entry)
-		self.__cmd = {
-			'server': self.cmd_server,
-		}

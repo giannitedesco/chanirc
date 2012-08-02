@@ -30,21 +30,17 @@ class ServerList(gtk.TreeView):
 		col.set_resizable(True)
 		self.append_column(col)
 		self.__map = {}
-		self.cur_svr = None
-		self.__tab = None
+		self.cur = None
 
 		self.__sel.connect('changed', self.__sel_change)
 
 	def __sel_change(self, sel):
 		(model, i) = sel.get_selected()
-		self.__tab = self.__store.get_value(i, self.COL_TAB)
+		self.cur = self.__store.get_value(i, self.COL_TAB)
 		self.emit('selection-changed')
 
 	def __select_iter(self, i):
 		self.__sel.select_iter(i)
-
-	def get_selection(self):
-		return self.__tab
 
 	def add_chan(self, svr, chan):
 		ch = ('gtk-edit', chan.chan, None, chan)
@@ -68,7 +64,6 @@ class ServerList(gtk.TreeView):
 		itr = self.__store.append(None, obj)
 		self.__map[svr] = itr
 		self.__select_iter(itr)
-		self.cur_svr = svr
 
 		def connected(svr):
 			self.__store.set_value(itr,

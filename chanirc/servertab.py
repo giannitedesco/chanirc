@@ -111,18 +111,22 @@ class ServerTab(IrcServer):
 	def _part(self, chan, user):
 		tab = self.get_chan(chan)
 		tab.msg('%s left %s\n'%(user, chan))
+		tab.remove_nick(name)
 
 	def _name_list(self, chan, name):
-		pass
+		tab = self.get_chan(chan)
+		tab.add_nick(name)
 
 	def _privmsg(self, user, chan, msg):
 		tab = self.get_chan(chan)
 		tab.msg('<%s> '%user.nick, ['dark blue'])
 		tab.msg(msg + '\n')
 
-	def _quit(self, user, chan, msg):
-		tab = self.get_chan(chan)
-		tab.msg('*** %s QUIT (%s)\n'%(user, msg), ['purple', 'bold'])
+	def _quit(self, user, msg):
+		for x in self.channels.values():
+			x.remove_nick(user.nick)
+			x.msg('*** %s QUIT (%s)\n'%(user, msg),
+				['purple', 'bold'])
 
 	def server(self, hostname, port = 6667):
 		if port != 6667:

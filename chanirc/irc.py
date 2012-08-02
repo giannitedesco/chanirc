@@ -36,6 +36,10 @@ class IrcServer(gobject.GObject):
 		pass
 	def _name_list(self, chan, name):
 		pass
+	def _privmsg(self, user, chan, msg):
+		pass
+	def _quit(self, chan, msg):
+		pass
 
 	def __dispatch(self, prefix, cmd, args, extra):
 		if len(prefix) == 0:
@@ -98,6 +102,9 @@ class IrcServer(gobject.GObject):
 
 		def r353(prefix, args, extra):
 			"Names list"
+			if '=' in args:
+				arr = map(lambda x:x.strip(), args.split('='))
+				args = arr[1]
 			self._name_list(args, extra)
 			return True
 
@@ -179,6 +186,9 @@ class IrcServer(gobject.GObject):
 		def privmsg(prefix, args, extra):
 			self._privmsg(IrcUser(prefix), args, extra)
 
+		def quit(prefix, args, extra):
+			self._quit(IrcUser(prefix), extra)
+
 		self.__cmds = {
 			'PING': ping,
 			'NOTICE': notice,
@@ -186,6 +196,7 @@ class IrcServer(gobject.GObject):
 			'PART': join,
 			'TOPIC': topic,
 			'PRIVMSG': privmsg,
+			'QUIT': quit,
 		}
 
 	def send(self, cmd):

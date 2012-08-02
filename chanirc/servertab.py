@@ -63,6 +63,11 @@ class ServerTab(IrcServer):
 			tab.msg(args + '\n')
 			self.privmsg(chan, args)
 
+		def action(win, chan, args):
+			tab = self.get_chan(chan)
+			tab.msg('*** %s %s\n'%(self.nick, args), ['dark green'])
+			self.action(chan, args)
+
 		def reconnect(win, chan, args):
 			self.server(self.sock.peer[0], self.sock.peer[1])
 
@@ -78,6 +83,7 @@ class ServerTab(IrcServer):
 			'disconnect': disconnect,
 			'j': join,
 			'privmsg': privmsg,
+			'me': action,
 		}
 
 	def get_chan(self, chan):
@@ -146,6 +152,10 @@ class ServerTab(IrcServer):
 		tab = self.get_chan(chan)
 		tab.msg('<%s> '%user.nick, ['dark blue'])
 		tab.msg(msg + '\n')
+
+	def _action(self, user, chan, msg):
+		tab = self.get_chan(chan)
+		tab.msg('*** %s %s\n'%(user.nick, msg), ['dark bluet'])
 
 	def _quit(self, user, msg):
 		for x in self.channels.values():

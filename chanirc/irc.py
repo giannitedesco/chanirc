@@ -1,6 +1,15 @@
 import gobject
 from linesock import LineSock
 
+def begins_with(s, prefix):
+	if len(s) < len(prefix):
+		return False
+	return s[:len(prefix)] == prefix
+def ends_with(s, suffix):
+	if len(s) < len(suffix):
+		return False
+	return s[-len(suffix):] == suffix
+
 class IrcUser:
 	def __init__(self, s):
 		arr = s.split('!', 1)
@@ -37,6 +46,8 @@ class IrcServer(gobject.GObject):
 	def _name_list(self, chan, name):
 		pass
 	def _privmsg(self, user, chan, msg):
+		pass
+	def _action(self, user, chan, msg):
 		pass
 	def _quit(self, chan, msg):
 		pass
@@ -185,6 +196,11 @@ class IrcServer(gobject.GObject):
 			return True
 
 		def privmsg(prefix, args, extra):
+			if begins_with(extra, '\x01ACTION') and \
+					ends_with(extra, '\x01'):
+				extra = extra[7:-1].strip()
+				self._action(IrcUser(prefix), args, extra)
+				return True
 			self._privmsg(IrcUser(prefix), args, extra)
 			return True
 
@@ -217,6 +233,9 @@ class IrcServer(gobject.GObject):
 	def privmsg(self, chan, msg):
 		self.send('PRIVMSG %s :%s'%(chan, msg))
 
+	def action(self, chan, msg):
+		self.send('PRIVMSG %s :\x01ACTION %s\x01'%(chan, msg))
+
 	def server(self, host, port, nick):
 		def sockerr(sock, op, msg):
 			self.info_msg('*** %s: %s:%d: %s'%(op,
@@ -243,6 +262,7 @@ class IrcServer(gobject.GObject):
 		def sock_in(sock, msg):
 			if len(msg) == 0:
 				return
+			#print msg
 
 			if msg[0] == ':':
 				arr = msg.split(None, 1)

@@ -31,7 +31,8 @@ class ChanWin(gtk.HPaned):
 		self.usrlist = gtk.TreeView()
 
 		chan = gtk.VBox()
-		chan.pack_start(self.topic, False, False)
+		if userlist:
+			chan.pack_start(self.topic, False, False)
 		chan.pack_start(scr, True, True)
 		self.pack1(chan, True, True)
 

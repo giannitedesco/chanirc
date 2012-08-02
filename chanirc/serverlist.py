@@ -33,20 +33,6 @@ class ServerList(gtk.TreeView):
 		self.cur_svr = None
 		self.__tab = None
 
-	def __svr_update(self, svr):
-		self.__store.set_value(self.__map[svr],
-					self.COL_TEXT, svr.title)
-		if svr.state == svr.STATE_DISCONNECTED:
-			self.__store.set_value(self.__map[svr],
-					self.COL_ICON, 'gtk-stop')
-		elif svr.state == svr.STATE_CONNECTING:
-			self.__store.set_value(self.__map[svr],
-					self.COL_ICON, 'gtk-go-forward')
-		elif svr.state == svr.STATE_CONNECTED:
-			self.__store.set_value(self.__map[svr],
-					self.COL_ICON, 'gtk-home')
-
-
 	def __select_iter(self, i):
 		self.__sel.select_iter(i)
 		self.__tab = self.__store.get_value(i, self.COL_TAB)
@@ -57,11 +43,30 @@ class ServerList(gtk.TreeView):
 
 	def add_server(self, svr):
 		obj = ('gtk-stop', svr.title, None, svr.tab)
-		i = self.__store.append(None, obj)
-		self.__map[svr] = i
-		self.__select_iter(i)
-		svr.connect('status-update', self.__svr_update)
+		itr = self.__store.append(None, obj)
+		self.__map[svr] = itr
+		self.__select_iter(itr)
 		self.cur_svr = svr
+
+		def connected(svr):
+			self.__store.set_value(itr,
+					self.COL_TEXT, svr.title)
+			self.__store.set_value(itr,
+					self.COL_ICON, 'gtk-home')
+		def connecting(svr):
+			self.__store.set_value(itr,
+					self.COL_TEXT, svr.title)
+			self.__store.set_value(itr,
+					self.COL_ICON, 'gtk-go-forward')
+		def disconnected(svr):
+			self.__store.set_value(itr,
+					self.COL_TEXT, svr.title)
+			self.__store.set_value(itr,
+					self.COL_ICON, 'gtk-stop')
+
+		svr.connect('connected', connected)
+		svr.connect('connecting', connecting)
+		svr.connect('disconnected', disconnected)
 
 gobject.type_register(ServerList)
 gobject.signal_new('selection-changed', ServerList,

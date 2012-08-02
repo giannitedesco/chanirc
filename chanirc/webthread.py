@@ -1,4 +1,3 @@
-from urlparse import urlparse
 from collections import deque
 import httplib2
 import threading
@@ -65,7 +64,6 @@ class WebConn(WorkQueue):
 				else:
 					break
 		except Exception, e:
-			raise
 			(r, d) = (e, None)
 
 		req.cb(r, d)
@@ -89,19 +87,6 @@ class WebPool:
 		return conn
 
 	def get_image(self, url, cb, err = None):
-		try:
-			u = urlparse(url)
-		except:
-			u = None
-			pass
-		if u is None or u.scheme == '':
-			try:
-				u = urlparse(url, scheme = 'http')
-			except:
-				return
-		if u.hostname is None:
-			return
-
 		def Closure(r, data):
 			if isinstance(r, Exception) or \
 				r.status != 200 or \
@@ -113,6 +98,6 @@ class WebPool:
 			else:
 				cb(data)
 
-		conn = self.get_conn(u)
-		req = WebReq(Closure, u)
+		conn = self.get_conn(url)
+		req = WebReq(Closure, url)
 		conn.pushreq(req)

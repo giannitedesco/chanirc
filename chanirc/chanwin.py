@@ -1,5 +1,27 @@
 import gobject, gtk, pango
 from webthread import WebPool
+from urlparse import urlparse, parse_qs
+import webkit
+
+def begins_with(s, prefix):
+	if len(s) < len(prefix):
+		return False
+	return s[:len(prefix)] == prefix
+
+def parse_url(url):
+		try:
+			u = urlparse(url)
+		except:
+			u = None
+			pass
+		if u is None or u.scheme == '':
+			try:
+				u = urlparse(url, scheme = 'http')
+			except:
+				return None
+		if u.hostname is None:
+			return None
+		return u
 
 class UserList(gtk.TreeView):
 	def __init__(self):
@@ -111,6 +133,55 @@ class ChanWin(gtk.HPaned):
 		img.show_all()
 		return img
 
+	def embed_web(self, url, mark):
+		buf = self.text.get_buffer()
+		gtk.gdk.threads_enter()
+		view = webkit.WebView()
+		view.set_usize(400, 256)
+		view.set_full_content_zoom(True)
+		view.set_zoom_level(0.25)
+		view.show_all()
+		view.open(url)
+		itr = buf.get_iter_at_mark(mark)
+		anchor = buf.create_child_anchor(itr)
+		self.text.add_child_at_anchor(view, anchor)
+		buf.insert(itr, '\n')
+		gtk.gdk.threads_leave()
+
+	def embed_image(self, url, mark):
+		buf = self.text.get_buffer()
+		def Closure(pic):
+			gtk.gdk.threads_enter()
+			img = self.scale_image(pic)
+			if img is None:
+				gtk.gdk.threads_leave()
+				return
+			itr = buf.get_iter_at_mark(mark)
+			anchor = buf.create_child_anchor(itr)
+			self.text.add_child_at_anchor(img, anchor)
+			buf.insert(itr, '\n')
+			gtk.gdk.threads_leave()
+
+		self.web.get_image(url, Closure)
+
+	def embed_url(self, url, mark):
+		url = parse_url(url)
+		if url is None:
+			return
+
+		if url.query is not None and len(url.query):
+			q = parse_qs(url.query)
+			if 'youtube' in url.hostname.lower() and q.has_key('v'):
+				yt = 'http://youtube.googleapis.com/v/'
+				self.embed_web(yt + q['v'][0], mark)
+				return
+		elif url.hostname.lower() == 'youtube.googleapis.com' and \
+				begins_with(url.path, '/v/'):
+			self.embed_web(yt + q['v'][0], mark)
+			return
+
+		return self.embed_image(url, mark)
+
 	def msg(self, msg, tags = []):
 		tags.append('font')
 		buf = self.text.get_buffer()
@@ -126,15 +197,11 @@ class ChanWin(gtk.HPaned):
 		self.text.scroll_to_iter(i, 0.0)
 
 		def is_url(s):
-			def begins_with(s, prefix):
-				if len(s) < len(prefix):
-					return False
-				return s[:len(prefix)] == prefix
 			if begins_with(s, 'http://'):
 				return True
 			if begins_with(s, 'https://'):
 				return True
-			if begins_with(s, 'www'):
+			if begins_with(s, 'www.'):
 				return True
 			return False
 
@@ -143,16 +210,4 @@ class ChanWin(gtk.HPaned):
 			if not is_url(x):
 				continue
 
-			def Closure(pic):
-				gtk.gdk.threads_enter()
-				img = self.scale_image(pic)
-				if img is None:
-					gtk.gdk.threads_leave()
-					return
-				itr = buf.get_iter_at_mark(mark)
-				anchor = buf.create_child_anchor(itr)
-				self.text.add_child_at_anchor(img, anchor)
-				buf.insert(itr, '\n')
-				gtk.gdk.threads_leave()
-
-			self.web.get_image(x, Closure)
+			self.embed_url(x, mark)

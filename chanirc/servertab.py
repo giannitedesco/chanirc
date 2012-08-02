@@ -52,7 +52,8 @@ class ServerTab(IrcServer):
 
 		def privmsg(chan, args):
 			tab = self.get_chan(chan)
-			tab.msg('<%s> %s'%(self.nick, args))
+			tab.msg('<%s> '%self.nick, ['dark green'])
+			tab.msg(args + '\n')
 			self.privmsg(chan, args)
 
 		self.__cmd = {
@@ -70,14 +71,14 @@ class ServerTab(IrcServer):
 			return ret
 
 	def server_msg(self, msg):
-		self.tab.msg(msg)
+		self.tab.msg(msg + '\n')
 
 	def info_msg(self, msg):
-		self.tab.msg(msg, ['bold', 'purple'])
+		self.tab.msg(msg + '\n', ['bold', 'purple'])
 
 	def chan_msg(self, chan, msg):
 		tab = self.get_chan(chan)
-		tab.msg(msg)
+		tab.msg(msg + '\n')
 
 	def _connected(self):
 		self.state = self.STATE_CONNECTED
@@ -96,12 +97,12 @@ class ServerTab(IrcServer):
 	def _set_topic(self, chan, topic):
 		tab = self.get_chan(chan)
 		tab.topic.set_text(topic)
-		tab.msg('topic in %s is %s'%(chan, topic),
+		tab.msg('topic in %s is %s\n'%(chan, topic),
 						['bold', 'purple'])
 
 	def _join(self, chan, user):
 		tab = self.get_chan(chan)
-		tab.msg('%s (%s@%s) joined %s'%(user.nick,
+		tab.msg('%s (%s@%s) joined %s\n'%(user.nick,
 						user.user,
 						user.host,
 						chan),
@@ -109,18 +110,19 @@ class ServerTab(IrcServer):
 
 	def _part(self, chan, user):
 		tab = self.get_chan(chan)
-		tab.msg('%s left %s'%(user, chan))
+		tab.msg('%s left %s\n'%(user, chan))
 
 	def _name_list(self, chan, name):
 		pass
 
 	def _privmsg(self, user, chan, msg):
 		tab = self.get_chan(chan)
-		tab.msg('<%s> %s'%(user.nick, msg))
+		tab.msg('<%s> '%user.nick, ['dark blue'])
+		tab.msg(msg + '\n')
 
 	def _quit(self, user, chan, msg):
 		tab = self.get_chan(chan)
-		tab.msg('*** %s QUIT (%s)'%(user, msg), ['purple', 'bold'])
+		tab.msg('*** %s QUIT (%s)\n'%(user, msg), ['purple', 'bold'])
 
 	def server(self, hostname, port = 6667):
 		if port != 6667:

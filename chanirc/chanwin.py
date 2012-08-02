@@ -10,7 +10,8 @@ class ChanWin(gtk.HPaned):
 
 		for x in ['red', 'blue', 'green',
 				'cyan', 'magenta', 'yellow',
-				'purple', 'black']:
+				'purple', 'black',
+				'dark blue', 'dark green']:
 			tag = buf.create_tag(x)
 			tag.set_property('foreground', x)
 			tag.set_property('foreground-set', True)
@@ -53,7 +54,7 @@ class ChanWin(gtk.HPaned):
 		buf = self.text.get_buffer()
 		i = buf.get_iter_at_offset(buf.get_char_count())
 		buf.place_cursor(i)
-		buf.insert_with_tags_by_name(i, msg + '\n', *tags)
+		buf.insert_with_tags_by_name(i, msg, *tags)
 		i = buf.get_iter_at_offset(buf.get_char_count())
 		buf.place_cursor(i)
 		self.text.scroll_to_iter(i, 0.0)

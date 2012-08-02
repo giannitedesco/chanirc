@@ -2,6 +2,9 @@ import gobject, gtk, pango
 
 class ChanWin(gtk.HPaned):
 	def __setup_tags(self, buf):
+		tag = buf.create_tag('font')
+		tag.set_property('font', 'Lucida Console 8')
+
 		tag = buf.create_tag('bold')
 		tag.set_property('weight', pango.WEIGHT_BOLD)
 
@@ -43,6 +46,7 @@ class ChanWin(gtk.HPaned):
 			self.pack2(u, False, False)
 
 	def msg(self, msg, tags = []):
+		tags.append('font')
 		buf = self.text.get_buffer()
 		i = buf.get_iter_at_offset(buf.get_char_count())
 		buf.place_cursor(i)

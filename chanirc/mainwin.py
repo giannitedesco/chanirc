@@ -93,5 +93,5 @@ class MainWin(gtk.Window):
 
 		self.set_focus(self.entry)
 		self.__cmd = {
-			"server": self.cmd_server,
+			'server': self.cmd_server,
 		}

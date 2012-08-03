@@ -56,6 +56,7 @@ class UserList(gtk.TreeView):
 		if itr is None:
 			return
 		self.store.remove(itr)
+		del self.m[nick]
 
 class ChanWin(gtk.HPaned):
 	def __setup_tags(self, buf):

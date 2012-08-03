@@ -1,5 +1,6 @@
 import gobject
 from linesock import LineSock
+from collections import deque
 
 def begins_with(s, prefix):
 	if len(s) < len(prefix):
@@ -29,6 +30,18 @@ class IrcUser:
 	def __repr__(self):
 		return 'IrcUser(%s!%s@%s)'%(self.nick, self.user, self.host)
 
+class NickList:
+	def __init__(self, nicks):
+		self.__nicks = deque(nicks)
+		self.reset()
+	def reset(self):
+		self.__next = deque(self.__nicks)
+	def get(self):
+		try:
+			return self.__next.popleft()
+		except IndexError:
+			return None
+
 class IrcServer(gobject.GObject):
 	# to be overriddem
 	def _connecting(self):
@@ -50,6 +63,8 @@ class IrcServer(gobject.GObject):
 	def _action(self, user, chan, msg):
 		pass
 	def _quit(self, chan, msg):
+		pass
+	def _nick_changed(self, user, nick, me):
 		pass
 
 	def __dispatch(self, prefix, cmd, args, extra):
@@ -91,14 +106,16 @@ class IrcServer(gobject.GObject):
 
 		return self.__dispatch(prefix, cmd, args, extra)
 
-	def __init__(self):
+	def __init__(self, nicks = []): 
 		gobject.GObject.__init__(self)
+		self.nicklist = NickList(nicks)
 		self.nick = None
 		self.sock = None
 
 		def r001(prefix, args, extra):
 			"connected"
 			self.server_msg(extra)
+			self.nick = args
 			return True
 
 		def r332(prefix, args, extra):
@@ -152,7 +169,12 @@ class IrcServer(gobject.GObject):
 
 		def r433(prefix, args, extra):
 			"Nick already taken"
-			self.info_msg('Nick already taken: %s'%extra)
+			nxt = self.nicklist.get()
+			if nxt is None:
+				self.info_msg('Nick already taken: %s'%extra)
+			else:
+				self.info_msg('Nick already taken: %s, retrying with %s'%(extra, nxt))
+				self.set_nick(nxt)
 			return True
 
 		self.resp_tbl = {
@@ -208,6 +230,16 @@ class IrcServer(gobject.GObject):
 			self._quit(IrcUser(prefix), extra)
 			return True
 
+		def nick(prefix, args, extra):
+			user = IrcUser(prefix)
+			if user.nick == self.nick:
+				self.nick = extra
+				me = True
+			else:
+				me = False
+			self._nick_changed(user, extra, me)
+			return True
+
 		self.__cmds = {
 			'PING': ping,
 			'NOTICE': notice,
@@ -216,6 +248,7 @@ class IrcServer(gobject.GObject):
 			'TOPIC': topic,
 			'PRIVMSG': privmsg,
 			'QUIT': quit,
+			'NICK': nick,
 		}
 
 	def send(self, cmd):
@@ -236,33 +269,40 @@ class IrcServer(gobject.GObject):
 	def action(self, chan, msg):
 		self.send('PRIVMSG %s :\x01ACTION %s\x01'%(chan, msg))
 
-	def server(self, host, port, nick):
+	def set_nick(self, nick):
+		self.send('NICK %s'%nick)
+
+	def server(self, host, port):
 		def sockerr(sock, op, msg):
 			self.info_msg('*** %s: %s:%d: %s'%(op,
 					sock.peer[0],
 					sock.peer[1],
 					msg))
 			self.sock = None
+			self.nick = None
 			self._disconnected()
 
 		def connected(sock):
 			self.info_msg('*** Connected: %s:%d'%(
 					sock.peer[0],
 					sock.peer[1]))
-			self.send('USER %s * * :chanirc'%self.nick)
-			self.send('NICK %s'%self.nick)
+
+			nick = self.nicklist.get()
+			self.send('USER %s * * :chanirc'%nick)
+			self.set_nick(nick)
 
 		def disconnected(sock):
 			self.info_msg('*** Disonnected: %s:%d'%(
 					sock.peer[0],
 					sock.peer[1]))
 			self.sock = None
+			self.nick = None
 			self._disconnected()
 
 		def sock_in(sock, msg):
 			if len(msg) == 0:
 				return
-			#print msg
+			#print '<<', msg
 
 			if msg[0] == ':':
 				arr = msg.split(None, 1)
@@ -279,7 +319,7 @@ class IrcServer(gobject.GObject):
 				self.info_msg(msg)
 
 		self.sock = LineSock() 
-		self.nick = nick
+		self.nicklist.reset()
 		self.sock.connect('data-in', sock_in)
 		self.sock.connect('connected', connected)
 		self.sock.connect('disconnected', disconnected)
@@ -291,4 +331,5 @@ class IrcServer(gobject.GObject):
 		if self.sock is not None:
 			self.sock.close()
 		self.sock = None
+		self.nick = None
 		self._disconnected()

@@ -23,7 +23,7 @@ class ServerTab(IrcServer):
 
 	def __init__(self):
 		#self.__gobject_init__()
-		IrcServer.__init__(self)
+		IrcServer.__init__(self, ['scaramanga', 'scara', 'scara-tzu'])
 		self.title = '<None>'
 		self.state = self.STATE_DISCONNECTED
 		self.tab = ChanWin(self, userlist = False)
@@ -76,6 +76,9 @@ class ServerTab(IrcServer):
 			tab.msg('*** %s %s\n'%(self.nick, args), ['dark green'])
 			self.action(chan, args)
 
+		def nick(win, chan, args):
+			self.set_nick(args)
+
 		def reconnect(win, chan, args):
 			if self.sock is None:
 				return
@@ -93,6 +96,7 @@ class ServerTab(IrcServer):
 			'disconnect': disconnect,
 			'j': join,
 			'privmsg': privmsg,
+			'nick': nick,
 			'me': action,
 		}
 
@@ -113,11 +117,17 @@ class ServerTab(IrcServer):
 	def info_msg(self, msg):
 		self.tab.msg(msg + '\n', ['bold', 'purple'])
 
-	def chan_msg(self, chan, msg):
+	def chan_msg(self, chan, msg, tags = []):
 		tab = self.get_chan(chan)
 		if tab is None:
 			return
-		tab.msg(msg + '\n')
+		tab.msg(msg + '\n', tags)
+
+	def nick_msg(self, nick, msg, tags = []):
+		for tab in self.channels.values():
+			if nick not in tab:
+				continue
+			tab.msg(msg + '\n', tags)
 
 	def _connected(self):
 		self.state = self.STATE_CONNECTED
@@ -154,6 +164,7 @@ class ServerTab(IrcServer):
 						user.host,
 						chan),
 						['bold', 'purple'])
+		tab.add_nick(user.nick)
 
 	def _part(self, chan, user):
 		tab = self.get_chan(chan)
@@ -186,8 +197,24 @@ class ServerTab(IrcServer):
 	def _quit(self, user, msg):
 		for x in self.channels.values():
 			x.remove_nick(user.nick)
-			x.msg('*** %s QUIT (%s)\n'%(user, msg),
-				['purple', 'bold'])
+		self.nick_msg('*** %s QUIT (%s)\n'%(user, msg),
+			['purple', 'bold'])
+
+	def _nick_changed(self, user, nick, me):
+		if me:
+			# changed my nick
+			self.nick_msg(user.nick,
+				'*** you (%s) are now known as %s'%(user,
+								nick),
+				['purple'])
+		else:
+			self.nick_msg(user.nick,
+				'*** %s is now known as %s'%(user, nick),
+				['purple'])
+		for tab in self.channels.values():
+			if user.nick not in tab:
+				continue
+			tab.rename_nick(user.nick, nick)
 
 	def server(self, hostname, port = 6667):
 		if port != 6667:
@@ -196,7 +223,7 @@ class ServerTab(IrcServer):
 			self.title = hostname
 
 		self.disconnect()
-		IrcServer.server(self, hostname, port, 'scara')
+		IrcServer.server(self, hostname, port)
 
 	def disconnect(self):
 		for x in self.channels.values():

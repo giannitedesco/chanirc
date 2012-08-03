@@ -16,5 +16,8 @@ class IrcChan(ChanWin):
 		if self.__nicks.has_key(nick):
 			del self.__nicks[nick]
 			self.usrlist.delete(nick)
+	def rename_nick(self, old, new):
+		self.remove_nick(old)
+		self.add_nick(new)
 	def __iter__(self):
 		return iter(self.__nicks)

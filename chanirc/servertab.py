@@ -22,7 +22,6 @@ class ServerTab(IrcServer):
 	STATE_CONNECTED = 2,
 
 	def __init__(self):
-		#self.__gobject_init__()
 		IrcServer.__init__(self, ['scaramanga', 'scara', 'scara-tzu'])
 		self.title = '<None>'
 		self.state = self.STATE_DISCONNECTED

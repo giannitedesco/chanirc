@@ -163,17 +163,19 @@ class ServerTab(IrcServer):
 						user.user,
 						user.host,
 						chan),
-						['bold', 'purple'])
+						['purple'])
 		tab.add_nick(user.nick)
 
 	def _part(self, chan, user):
 		tab = self.get_chan(chan)
 		if tab is None:
 			return
-		tab.msg('%s left %s\n'%(user, chan))
+		tab.msg('%s left %s\n'%(user, chan), ['purple'])
 		tab.remove_nick(user.nick)
 		if user.nick == self.nick:
 			self.emit('remove-channel', tab)
+			if self.channels.has_key(chan):
+				del self.channels[chan]
 
 	def _name_list(self, chan, name):
 		tab = self.get_chan(chan)
@@ -198,7 +200,7 @@ class ServerTab(IrcServer):
 		for x in self.channels.values():
 			x.remove_nick(user.nick)
 		self.nick_msg('*** %s QUIT (%s)\n'%(user, msg),
-			['purple', 'bold'])
+			['purple'])
 
 	def _nick_changed(self, user, nick, me):
 		if me:

@@ -1,5 +1,5 @@
 from socket import gethostbyname, socket, AF_INET, SOCK_STREAM, IPPROTO_TCP, \
-			SOL_SOCKET, SO_ERROR, error as SockError
+			SOL_SOCKET, SO_KEEPALIVE, SO_ERROR, error as SockError
 from errno import EINPROGRESS, EAGAIN
 from os import strerror
 from collections import deque
@@ -21,6 +21,7 @@ class TCPSock(gobject.GObject):
 		gobject.GObject.__init__(self)
 		self._sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)
 		self._sock.setblocking(0)
+		self._sock.setsockopt(SOL_SOCKET, SO_KEEPALIVE, 1)
 		self.__waitf = 0
 		self.__sid = None
 		self.__wait = False

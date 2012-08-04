@@ -239,6 +239,8 @@ class ServerTab(IrcServer):
 			chan = None
 
 		if s[0] == '/':
+			if len(s) == 1:
+				return
 			arr = s[1:].split(None, 1)
 			if len(arr) < 2:
 				arr.append(None)

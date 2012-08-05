@@ -31,6 +31,7 @@ class TCPSock(gobject.GObject):
 	def close(self):
 		self.unwait()
 		self._sock.close()
+		self._sock = None
 
 	def __del__(self):
 		self.close()
@@ -96,7 +97,7 @@ class TCPSock(gobject.GObject):
 
 	def wait(self):
 		self.unwait()
-		if self._sock:
+		if self._sock is not None:
 			self.__sid = glib.io_add_watch(self._sock.fileno(),
 				self.__waitf | glib.IO_HUP | glib.IO_ERR,
 				self.__cb)

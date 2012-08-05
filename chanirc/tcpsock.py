@@ -30,8 +30,9 @@ class TCPSock(gobject.GObject):
 
 	def close(self):
 		self.unwait()
-		self._sock.close()
-		self._sock = None
+		if self._sock is not None:
+			self._sock.close()
+			self._sock = None
 
 	def __del__(self):
 		self.close()

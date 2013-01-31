@@ -1,0 +1,5 @@
+chanirc - Cheesy GTK IRC client with embedded content
+Copyright (c) 2013 Gianni Tedesco
+
+0. INTRODUCTION
+requires pygtk and python chrome and such things for youtube integration
